@@ -26,7 +26,7 @@ struct ActiveBuilder {
     static func createURLElements(from text: String, range: NSRange, maximumLength: Int?) -> ([ElementTuple], String) {
         let type = ActiveType.url
         var text = text
-        let matches = RegexParser.getElements(from: text, with: type.pattern, range: range)
+        let matches = getMatches(from: text, for: type, range: range)
         let nsstring = text as NSString
         var elements: [ElementTuple] = []
 
@@ -57,7 +57,7 @@ struct ActiveBuilder {
                                                 minLength: Int = 2,
                                                 filterPredicate: ActiveFilterPredicate?) -> [ElementTuple] {
 
-        let matches = RegexParser.getElements(from: text, with: type.pattern, range: range)
+        let matches = getMatches(from: text, for: type, range: range)
         let nsstring = text as NSString
         var elements: [ElementTuple] = []
 
@@ -76,7 +76,7 @@ struct ActiveBuilder {
                                                                   for type: ActiveType,
                                                                       range: NSRange,
                                                                       filterPredicate: ActiveFilterPredicate?) -> [ElementTuple] {
-        let matches = RegexParser.getElements(from: text, with: type.pattern, range: range)
+        let matches = getMatches(from: text, for: type, range: range)
         let nsstring = text as NSString
         var elements: [ElementTuple] = []
 
@@ -96,5 +96,28 @@ struct ActiveBuilder {
             }
         }
         return elements
+    }
+    
+    private static func getMatches(from text: String, for type: ActiveType, range: NSRange) -> [NSTextCheckingResult] {
+        switch type {
+        case .url: return urlMatches(from: text, range: range)
+        default:
+            return RegexParser.getElements(from: text, with: type.pattern, range: range)
+        }
+    }
+    
+    private static var urlDetector: NSDataDetector?
+    
+    private static func urlMatches(from text: String, range: NSRange) -> [NSTextCheckingResult] {
+        if urlDetector == nil {
+            urlDetector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
+        }
+        
+        guard let detector = urlDetector else {
+            return []
+        }
+        
+        let matches = detector.matches(in: text, options: [], range: range)
+        return matches
     }
 }
